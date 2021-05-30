@@ -1,18 +1,53 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png" />
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App" />
+  <div class="w-full h-full bg-gray-100 p-2">
+    <h1 class="text-3xl font-bold text-gray-800">メッセージ送信テスト</h1>
+    <div class="my-4 border-2 border-blue-900 rounded p-4">
+      <input type="text" v-model="message" />
+      <button
+        class="inline-block bg-yellow-400 ml-1 rounded px-5 py-1 shadow"
+        @click="sendMessage"
+      >
+        送信
+      </button>
+    </div>
+    <p v-for="(message, idx) in messages" :key="idx">
+      {{ message }}
+    </p>
   </div>
 </template>
 
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
-import HelloWorld from "@/components/HelloWorld.vue"; // @ is an alias to /src
+import io from "socket.io-client";
 
 @Options({
-  components: {
-    HelloWorld,
-  },
+  components: {},
 })
-export default class Home extends Vue {}
+export default class Home extends Vue {
+  message = "hello!";
+
+  io = io("http://localhost:3000/");
+  socket = this.io.connect();
+
+  sendMessage(): void {
+    console.log({ message: this.message });
+    this.socket.emit("ev", this.message);
+  }
+
+  mounted(): void {
+    console.log("mounted.");
+    this.socket.on("ev", (data) => {
+      console.log("receive", data);
+      this.$store.dispatch("receiveMessage", data);
+    });
+  }
+
+  get messages(): { timestamp: string; message: string }[] {
+    return this.$store.getters.messages;
+  }
+
+  beforeUnmount() {
+    this.socket.disconnect();
+  }
+}
 </script>
